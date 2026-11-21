@@ -581,14 +581,12 @@ function startVoiceEntry(){
 }
 function voiceNumbersFromText(text){
   const out=[];
-  // Speech recognition may concatenate a spoken list: 01 02 00 10 74 99 -> 010200107499.
-  const tokens=text.match(/\d+/g)||[];
+  // Convert a digit run that is clearly a list of two-digit numbers.
+  const tokens=(text.match(/\d+/g)||[]);
   tokens.forEach(token=>{
-    if(token.length>=4 && token.length%2===0){for(let i=0;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));}
-    else if(token.length<=2)out.push(Number(token));
-    else { // Odd-length run: retain the final two-digit numbers and avoid inventing a 3-digit number.
-      let i=0;if(token.length%2===1){out.push(Number(token.slice(0,1)));i=1;}for(;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));
-    }
+    if(token.length===1)out.push(Number(token));
+    else if(token.length%2===0){for(let i=0;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));}
+    else {out.push(Number(token.slice(0,1)));for(let i=1;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));}
   });
   return out.filter(n=>Number.isInteger(n)&&n>=0&&n<=99);
 }
@@ -597,36 +595,40 @@ function prepareVoiceReview(){
   if(!raw){host.innerHTML='<div class="note">Speak or type an entry first.</div>';return;}
   const rows=[];
   const clean=raw.replace(/\b(?:rupees?|rs\.?)\b/gi,' ').replace(/₹/g,' ').replace(/,/g,' ').replace(/\s+/g,' ').trim();
-  const amountMatch=clean.match(/(?:₹\s*)?(\d+(?:\.\d{1,2})?)\s*each\b/i);
-  const amount=amountMatch?Number(amountMatch[1]):NaN;
-  const isAllPair=/\ball\s+(?:pairs?|piers?)\b/i.test(clean);
-  const houseMatch=clean.match(/\bhouse\s+(\d)\b/i);
-  const endingMatch=clean.match(/\bending\s+(\d)\b/i);
-  if(amountMatch && isAllPair){
-    for(let d=0;d<=9;d++) rows.push({n:d*11,amount});
-  }else if(amountMatch && houseMatch){
-    const h=Number(houseMatch[1]);for(let d=0;d<=9;d++)rows.push({n:h*10+d,amount});
-  }else if(amountMatch && endingMatch){
-    const e=Number(endingMatch[1]);for(let d=0;d<=9;d++)rows.push({n:d*10+e,amount});
-  }else if(amountMatch){
-    // For a spoken list, accept separated two-digit tokens. If speech recognition joins them,
-    // split an even-length digit run into pairs (e.g. 01020510 -> 01,02,05,10).
-    const before=clean.slice(0,amountMatch.index).replace(/\ball\s+(?:pairs?|piers?)\b/ig,' ').replace(/\b(?:house|ending)\s+\d\b/ig,' ');
-    const tokens=before.match(/\d+/g)||[];
-    tokens.forEach(token=>{
-      if(token.length===1) rows.push({n:Number(token),amount});
-      else if(token.length%2===0){for(let i=0;i<token.length;i+=2)rows.push({n:Number(token.slice(i,i+2)),amount});}
-      else {rows.push({n:Number(token.slice(0,1)),amount});for(let i=1;i<token.length;i+=2)rows.push({n:Number(token.slice(i,i+2)),amount});}
-    });
+  const isAllPair=/\ball\s+(?:pairs?|piers?)\b/i.test(raw);
+  const houseMatch=raw.match(/\bhouse\s+(\d)\b/i);
+  const endingMatch=raw.match(/\bending\s+(\d)\b/i);
+  const eachMatch=raw.match(/(\d+(?:\.\d{1,2})?)\s*(?:rupees?|rs\.?|₹)?\s*each\b/i) || raw.match(/\beach\s*(?:number\s*)?(?:₹|rs\.?|rupees?)?\s*(\d+(?:\.\d{1,2})?)/i);
+  const sharedAmount=eachMatch?Number(eachMatch[1]):NaN;
+  if(Number.isFinite(sharedAmount)&&sharedAmount>0&&isAllPair){
+    for(let d=0;d<=9;d++)rows.push({n:d*11,amount:sharedAmount});
+  }else if(Number.isFinite(sharedAmount)&&sharedAmount>0&&houseMatch){
+    const h=Number(houseMatch[1]);for(let d=0;d<=9;d++)rows.push({n:h*10+d,amount:sharedAmount});
+  }else if(Number.isFinite(sharedAmount)&&sharedAmount>0&&endingMatch){
+    const e=Number(endingMatch[1]);for(let d=0;d<=9;d++)rows.push({n:d*10+e,amount:sharedAmount});
+  }else if(Number.isFinite(sharedAmount)&&sharedAmount>0){
+    const before=raw.slice(0,eachMatch.index).replace(/\ball\s+(?:pairs?|piers?)\b/ig,' ').replace(/\b(?:house|ending)\s+\d\b/ig,' ');
+    const nums=voiceNumbersFromText(before);
+    nums.forEach(n=>rows.push({n,amount:sharedAmount}));
   }else{
-    // Individual pairs such as “01 Rs 50, 53 Rs 60, 98 Rs 500”.
-    // First preserve currency markers from the raw transcript, as stripping them can merge tokens.
+    // Parse explicit currency-marked pairs first, then comma-separated number/amount chunks.
     const currencyPairs=[...raw.matchAll(/(?:number\s*)?(\d{1,2})\s*(?:₹|rs\.?|rupees?)\s*(\d+(?:\.\d{1,2})?)/gi)];
-    if(currencyPairs.length){currencyPairs.forEach(m=>{const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});});}
-    else {
-      // Fallback for simple typed/speech transcripts like “01 500, 02 200”.
-      const matches=[...clean.matchAll(/(?:number\s*)?(\d{1,2})\s*(?:[:=]|\s+)\s*(\d+(?:\.\d{1,2}?))/gi)];
-      matches.forEach(m=>{const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});});
+    if(currencyPairs.length){
+      currencyPairs.forEach(m=>{const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});});
+    }else{
+      const chunks=raw.split(/[;,]+/).map(s=>s.trim()).filter(Boolean);
+      chunks.forEach(chunk=>{
+        const m=chunk.match(/(?:number\s*)?(\d{1,2})\s*(?:[:=]|\s+)\s*(\d+(?:\.\d{1,2})?)/i);
+        if(m){const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});}
+      });
+      // If punctuation is missing, try adjacent number/amount pairs in a flat sequence.
+      if(!rows.length){
+        const nums=raw.match(/\d+(?:\.\d{1,2})?/g)||[];
+        for(let i=0;i+1<nums.length;i+=2){
+          const n=Number(nums[i]),a=Number(nums[i+1]);
+          if(Number.isInteger(n)&&n>=0&&n<=99&&a>0)rows.push({n,amount:a});
+        }
+      }
     }
   }
   voiceReviewRows=rows.filter(r=>Number.isInteger(r.n)&&r.n>=0&&r.n<=99&&Number.isFinite(r.amount)&&r.amount>0);
