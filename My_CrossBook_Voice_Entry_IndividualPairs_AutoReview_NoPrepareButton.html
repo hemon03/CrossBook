@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>My CrossBook</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+header{position:relative;z-index:20;background:#fff;padding:10px;border-bottom:1px solid #d8dde3}
+h1{font-size:20px;margin:0 0 8px}
+.quick-buy-panel{padding:8px;margin:0 0 8px;background:#f8fafc;border:1px solid #d8dde3;border-radius:8px}
+.quick-buy-panel .summary-title{margin-bottom:7px}
+.quick-buy-panel .controls{gap:8px}
+.quick-buy-panel .small{margin-top:6px}
+@media(max-width:700px){.quick-buy-panel{margin-bottom:8px}.quick-buy-panel .controls{gap:6px}}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label{font-size:14px}
+input{width:88px;padding:7px 8px;border:1px solid #aaa;border-radius:6px;font-size:15px;min-height:36px}
+.denomInput{width:230px;max-width:100%;}
+/* Compact table sizing: columns follow their content instead of stretching across the screen. */
+.tableWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#crossTables table{width:max-content;min-width:0;table-layout:auto}
+#crossTables th,#crossTables td{padding:2px 3px;white-space:nowrap}
+#crossTables th:first-child,#crossTables td.no{width:34px;min-width:34px;padding:2px 4px}
+#crossTables th:not(:first-child):not(:last-child),#crossTables td.denomsCell{width:52px;min-width:52px}
+#crossTables th:last-child,#crossTables td.totalCell{width:118px;min-width:118px;max-width:118px}
+#crossTables .totalCell{white-space:normal}
+#crossTables .adjustBox{gap:2px}
+#crossTables .adjustInput{width:50px}
+#crossTables .adjustBtn{padding:3px 5px}
+.controls label{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.controlBtn{align-self:center;margin-top:0}
+.adjustBox{display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap}
+.adjustInput{width:66px;min-height:28px;padding:3px 4px;text-align:center;font-size:13px}
+.adjustBtn{padding:4px 7px;font-size:12px;border-radius:5px}
+.adjustNote{font-size:10px;color:#555;display:block;margin-top:2px}
+.countBadge{display:block;min-width:16px;width:max-content;margin:2px auto 0;padding:1px 4px;border-radius:4px;background:#1976d2;color:white;font-size:11px;line-height:15px;font-weight:800}
+.countBadge.zero{display:none}
+.denom{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.denom.hasCount{outline:2px solid #1976d2;outline-offset:-2px}
+.denomsCell{padding:1px 2px!important}
+.totalCell{min-width:65px}.no.green{background:#c6efce!important}.no.yellow{background:#ffeb9c!important}.no.red{background:#ffc7ce!important}
+.tableWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:max-content;min-width:0;table-layout:auto}th,td{padding:3px}.totalCell{padding:2px!important}.total{min-width:0;padding:2px 3px}
+@media(max-width:700px){.denomInput{width:180px}.controls{gap:5px}main{padding:5px}.panel{padding:4px;margin-bottom:7px}#crossTables th,#crossTables td{padding:1px 2px}#crossTables th:first-child,#crossTables td.no{width:30px;min-width:30px}#crossTables th:not(:first-child):not(:last-child),#crossTables td.denomsCell{width:46px;min-width:46px}.denom{min-width:40px;min-height:34px;padding:2px 3px;font-size:12px}.total{min-width:0;font-size:12px}.adjustInput{width:44px}.adjustBtn{padding:3px 4px}#crossTables th:last-child,#crossTables td.totalCell{width:108px;min-width:108px;max-width:108px}}
+button{border:0;border-radius:7px;padding:10px 13px;font-size:15px;font-weight:700;touch-action:manipulation}
+.reset{background:#c62828;color:#fff}.undo{background:#f0ad00;color:#111}
+.tab{background:#1f6feb;color:#fff}
+.pdf{background:#555;color:#fff}
+.tab.active{background:#1769d1}
+.small{font-size:12px;color:#666;margin-top:6px}
+main{padding:10px}
+.panel{background:#fff;border-radius:8px;padding:8px;margin-bottom:12px;overflow-x:auto}
+.panel-title{font-weight:700;background:#e9edf2;padding:7px 8px;border-radius:5px;margin-bottom:7px}
+table{border-collapse:collapse;min-width:0;width:max-content;table-layout:auto}
+th,td{border:1px solid #c7cdd3;text-align:center;padding:5px}
+th{background:#1f4e78;color:#fff;font-weight:700}
+.no{background:#f7f7f7;font-weight:700;min-width:32px}
+.denom{background:#d9eaf7;min-width:48px;min-height:38px;padding:4px 6px}
+.denom:active{transform:scale(.97)}.denom.clicked{outline:3px solid #1976d2;outline-offset:-3px;box-shadow:0 0 0 2px #fff inset}.denom.flash{animation:tapFlash .35s ease}@keyframes tapFlash{0%{background:#1976d2;color:#fff}100%{background:#d9eaf7;color:#222}}
+.total{font-weight:800;min-width:60px}
+.green{background:#c6efce}
+.yellow{background:#ffeb9c}
+.red{background:#ffc7ce}
+.hidden{display:none!important}
+.summary-title{font-weight:700;background:#e9edf2;padding:8px;border-radius:5px;margin-bottom:8px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.card{border:1px solid #c7cdd3;border-radius:7px;padding:9px;text-align:center;background:#fff}
+.card b{display:block;font-size:12px;color:#666;margin-bottom:4px}
+.card span{font-size:19px;font-weight:800}
+.note{padding:12px;text-align:center;color:#666}
+.buyStake{font-weight:900;font-size:18px;min-width:110px;padding:8px 10px;border:2px solid #c62828;background:#fff0f0;color:#a40000;white-space:nowrap}.buyNeeded{background:#ffe2e2;color:#a40000}.buyNone{background:#e8f5e9;color:#176b2c;border-color:#8bc79a}
+@media(max-width:700px){
+ h1{font-size:18px}
+ header{padding:8px}
+ button{padding:11px 12px}
+ .summary{grid-template-columns:repeat(2,1fr)}
+}
+@media print{
+ @page{size:A4 landscape;margin:8mm}
+ body{background:#fff}
+ header{display:none!important}
+ main{padding:0}
+ .panel{box-shadow:none;overflow:visible;break-inside:avoid}
+ .hidden{display:block!important}
+ table{width:100%;min-width:0}
+ .denom{background:#fff!important}.countBadge{background:#1976d2!important;color:#fff!important}.adjustBox{display:none}.adjustNote{font-size:9px}
+ th{background:#1f4e78!important;color:#fff!important}
+ .summary{grid-template-columns:repeat(4,1fr)}
+}
+
+/* Cross Book ledger preview: two compact printable-style pages, two 25-number columns per page. */
+.cross-ledger-page{margin-bottom:12px;padding:6px;background:#fff;border:1px solid #d8dde3;border-radius:7px;touch-action:pan-y}
+.cross-ledger-page.is-hidden{display:none}
+.cross-page-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 8px;padding:6px;background:#fff;border:1px solid #d8dde3;border-radius:7px}
+.cross-page-nav button{border:0;border-radius:6px;padding:7px 13px;background:#1f4e78;color:#fff;font-weight:700}
+.cross-page-nav button:disabled{opacity:.35}
+.cross-page-indicator{font-weight:700;min-width:88px;text-align:center}
+.cross-ledger-page-title{font-weight:700;background:#e9edf2;padding:5px 7px;border-radius:4px;margin-bottom:5px;font-size:13px}
+.cross-ledger-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:start}
+.cross-ledger-columns .panel{padding:2px;margin:0;overflow:visible;min-width:0}
+.cross-ledger-columns .panel-title{display:none}
+.cross-ledger-columns .tableWrap{overflow:visible;width:100%}
+#crossTables .cross-ledger-columns table{width:100%;table-layout:fixed;border-collapse:collapse}
+#crossTables .cross-ledger-columns th,#crossTables .cross-ledger-columns td{padding:1px 2px;font-size:10px;line-height:1.05}
+#crossTables .cross-ledger-columns th:first-child,#crossTables .cross-ledger-columns td.no{width:24px;min-width:24px;padding:1px 2px}
+#crossTables .cross-ledger-columns th:not(:first-child):not(:last-child),#crossTables .cross-ledger-columns td.denomsCell{width:auto;min-width:0}
+#crossTables .cross-ledger-columns th:last-child,#crossTables .cross-ledger-columns td.totalCell{width:64px;min-width:64px;max-width:64px}
+#crossTables .cross-ledger-columns .denom{min-width:0;width:100%;min-height:22px;padding:1px;font-size:9px;border-radius:3px}
+#crossTables .cross-ledger-columns .countBadge{font-size:8px;line-height:9px;min-width:11px;padding:0 2px;margin-top:1px}
+#crossTables .cross-ledger-columns .adjustBox{gap:1px;flex-wrap:nowrap}
+#crossTables .cross-ledger-columns .adjustInput{width:25px;min-height:19px;padding:1px;font-size:9px}
+#crossTables .cross-ledger-columns .adjustBtn{padding:1px 3px;font-size:9px;line-height:1.2}
+#crossTables .cross-ledger-columns .adjustNote{font-size:8px;margin-top:1px}
+#crossTables .cross-ledger-columns .total{font-size:10px;padding:1px}
+@media(max-width:700px){.cross-ledger-page{padding:3px}.cross-ledger-columns{gap:3px}#crossTables .cross-ledger-columns th,#crossTables .cross-ledger-columns td{font-size:8px;padding:1px}#crossTables .cross-ledger-columns th:first-child,#crossTables .cross-ledger-columns td.no{width:19px;min-width:19px}#crossTables .cross-ledger-columns th:last-child,#crossTables .cross-ledger-columns td.totalCell{width:48px;min-width:48px;max-width:48px}#crossTables .cross-ledger-columns .denom{min-height:18px;font-size:8px}#crossTables .cross-ledger-columns .adjustInput{width:19px;font-size:8px}#crossTables .cross-ledger-columns .adjustBtn{padding:1px 2px;font-size:8px}}
+@media print{.cross-page-nav{display:none!important}.cross-ledger-page,.cross-ledger-page.is-hidden{display:block!important;break-after:page;border:0;padding:0;margin:0}.cross-ledger-page:last-child{break-after:auto}.cross-ledger-columns .panel{break-inside:avoid}}
+
+/* Quick Entry: keep the entire highlighted entry header (title + inputs + action buttons + helper text) pinned while the number groups scroll with the page. */
+#quick{overflow:visible!important;position:relative}
+#quick .quick-entry-panel{overflow:visible!important;position:relative}
+#quick .quick-entry-sticky{position:sticky;top:0;z-index:50;background:#fff;padding:4px 8px 8px;margin:0 -4px 8px;border-bottom:1px solid #d8dde3;box-shadow:0 3px 7px rgba(0,0,0,.12)}
+#quick .quick-entry-sticky .summary-title{margin-bottom:8px;position:relative}
+#quick .quick-entry-message{font-size:12px;color:#666;padding:5px 0 0;min-height:22px}
+#quick .quick-entry-message:empty{display:none}
+#quick .quick-number-scroll{max-height:none!important;height:auto!important;min-height:0;overflow:visible!important;border:1px solid #d8dde3;border-radius:6px;padding:6px;background:#fff}
+#quick .quick-number-scroll .quick-number-group{margin-bottom:6px}
+#quick .quick-number-option.green{background:#c6efce!important}
+#quick .quick-number-option.yellow{background:#ffeb9c!important}
+#quick .quick-number-option.red{background:#f00!important;color:#fff!important;border-color:#b00000!important}
+#quick .quick-number-option.red span{color:#fff!important}
+@media(max-width:700px){#quick .quick-entry-sticky{top:0;padding:4px 4px 8px;margin:0 0 8px}#quick .quick-number-scroll{max-height:none!important;height:auto!important;min-height:0;overflow:visible!important}}
+
+
+.house-ending-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.house-ending-controls label{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.quick-add-selected{background:#218838!important;color:#fff!important}
+.quick-clear-selection{background:#f0ad00!important;color:#111!important}
+.quick-number-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;min-width:600px}
+.quick-number-option{cursor:pointer}
+.quick-number-option.red{background:#f00!important;color:#fff!important;border-color:#b00000!important}
+.quick-number-option.red span{color:#fff!important}
+.overlimit-action{padding:6px 9px;font-size:12px;white-space:nowrap;background:#218838;color:#fff}
+.overlimit-action.covered{background:#e8f5e9;color:#176b2c;border:1px solid #8bc79a}
+@media(max-width:700px){.house-ending-controls{gap:6px}.quick-number-grid{min-width:600px}.overlimit-action{padding:7px 8px}}
+
+
+/* Voice recording feedback */
+.voice-live{display:inline-flex;align-items:center;gap:9px;padding:9px 13px;border-radius:22px;background:#f1f5f9;color:#334155;font-weight:700;margin:8px 0}
+.voice-live .dot{width:11px;height:11px;border-radius:50%;background:#94a3b8;display:inline-block}
+.voice-live.listening{background:#fff1f2;color:#b91c1c}
+.voice-live.listening .dot{background:#ef4444;animation:voicePulse 1s infinite}
+@keyframes voicePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.45)}}
+#voiceStartBtn.is-listening{background:#15803d!important;color:#fff!important;box-shadow:0 0 0 4px #bbf7d0;animation:voiceButtonPulse 1.2s infinite}
+@keyframes voiceButtonPulse{0%,100%{box-shadow:0 0 0 3px #bbf7d0}50%{box-shadow:0 0 0 7px #dcfce7}}
+</style>
+</head>
+<body>
+<header>
+  <h1>My CrossBook</h1>
+  <div class="panel quick-buy-panel" id="bulkPanel">
+      <div class="summary-title">Quick Buy — House / Ending</div>
+      <div class="controls house-ending-controls">
+        <label>House (e.g. 2 = 20–29):
+          <select id="houseSelect" style="width:90px;min-height:36px;padding:7px;border:1px solid #aaa;border-radius:6px;font-size:15px"></select>
+        </label>
+        <label>Each number ₹:
+          <input id="houseAmount" type="number" min="0.01" step="0.01" value="100" inputmode="decimal">
+        </label>
+        <button class="tab" onclick="applyHouse()">BUY HOUSE</button>
+        <label>Ending:
+          <select id="endingSelect" style="width:90px;min-height:36px;padding:7px;border:1px solid #aaa;border-radius:6px;font-size:15px"></select>
+        </label>
+        <label>Each number ₹:
+          <input id="endingAmount" type="number" min="0.01" step="0.01" value="100" inputmode="decimal">
+        </label>
+        <button class="tab" onclick="applyEnding()">BUY ENDING</button>
+        <label>Pair:
+          <select id="pairSelect" style="width:90px;min-height:36px;padding:7px;border:1px solid #aaa;border-radius:6px;font-size:15px"></select>
+        </label>
+        <label>Amount ₹:
+          <input id="pairAmount" type="number" min="0.01" step="0.01" value="100" inputmode="decimal">
+        </label>
+        <button class="tab" onclick="applyPair()">BUY PAIR</button>
+      </div>
+      <div class="small">House adds the amount to 10 consecutive numbers (00–09, 10–19, …, 90–99). Ending adds the amount to 10 numbers (e.g. ending 7: 07, 17, …, 97). Pair adds the amount to one double number (00, 11, 22, …, 99), or select ALL PAIRS to add it to all 10 double numbers at once. Amounts are added to the existing totals.</div>
+    </div>
+  <div class="controls">
+    <label>Denominations:
+      <input id="denomInput" class="denomInput" type="text" value="5,15,25,50,100,500,1000" placeholder="e.g. 15,30">
+    </label>
+    <button class="tab controlBtn" onclick="applyDenoms()">APPLY VALUES</button>
+    <label>Yellow at:
+      <input id="yellowThreshold" type="number" min="0" value="300" aria-label="Yellow threshold">
+    </label>
+    <label>Red at:
+      <input id="redThreshold" type="number" min="1" value="500" aria-label="Red threshold">
+    </label>
+    <button class="tab controlBtn" onclick="applyThresholds()">APPLY COLOURS</button>
+    <label>Over Limit (₹):
+      <input id="overLimitValue" type="number" min="0" step="1" value="1500" aria-label="Global over limit">
+    </label>
+    <button class="tab controlBtn" onclick="applyOverLimit()">APPLY LIMIT</button>
+    <button class="undo" onclick="undoLast()">↶ UNDO LAST</button><button class="reset" onclick="resetDay()">NEW DAY / RESET</button>
+    <label>Payout (₹10 stake):
+      <select id="payoutRate" aria-label="Payout rate" style="width:110px;min-height:36px;padding:7px;border:1px solid #aaa;border-radius:6px;font-size:15px">
+        <option value="80">₹800 (×80)</option>
+        <option value="70">₹700 (×70)</option>
+        <option value="60">₹600 (×60)</option>
+        <option value="custom">Custom</option>
+      </select>
+    </label>
+    <label id="customRateWrap" class="hidden">Custom payout (₹ per ₹1):
+      <input id="customRate" type="number" min="0.01" step="0.01" value="80" style="width:100px">
+    </label>
+    <button class="pdf" onclick="savePDF()">SAVE PDF</button>
+  </div>
+  <div class="small">Tap denominations to add stake. House and Ending tools apply the entered amount to each matching number. Save PDF before starting a new day.</div>
+  <div class="controls" style="margin-top:8px">
+    <button id="crossTabBtn" class="tab active" onclick="showPage('cross')">CROSS BOOK</button>
+    <button id="quickTabBtn" class="tab" onclick="showPage('quick')">QUICK ENTRY</button>
+    <button id="overLimitTabBtn" class="tab" onclick="showPage('overlimit')">OVER LIMIT</button>
+    <button id="riskTabBtn" class="tab" onclick="showPage('risk')">PAYOUT RISK</button>
+  </div>
+</header>
+
+<main>
+  <section id="cross">
+    <div id="crossTables"></div>
+
+    <div class="panel">
+      <div class="summary-title">Daily Summary</div>
+      <div class="controls" style="margin-bottom:8px">
+        <label>Commission (%):
+          <input id="com" type="number" min="0" max="100" step="0.1" value="20" inputmode="decimal" aria-label="Commission percentage" style="width:88px">
+        </label>
+      </div>
+      <div id="crossSummary"></div>
+    </div>
+  </section>
+  <section id="quick" class="hidden">
+    <div class="panel quick-entry-panel">
+      <div class="quick-entry-sticky">
+        <div class="summary-title">Quick Entry — Update Cross Book</div>
+        <div class="controls">
+          <label>Number (00–99): <input id="quickNumber" type="number" min="0" max="99" step="1" placeholder="e.g. 26" inputmode="numeric"></label>
+          <label>Amount (₹): <input id="quickAmount" type="number" min="0.01" step="0.01" placeholder="e.g. 100" inputmode="decimal"></label>
+          <button class="tab" onclick="applyQuickEntry()">ADD TO CROSS BOOK</button>
+          <button type="button" class="quick-clear-selection" onclick="clearQuickSelection()">CLEAR SELECTION</button>
+          <button class="quick-add-selected" onclick="applyQuickMultiEntry()">ADD SELECTED (<span id="quickSelectedCount">0</span>)</button>
+        </div>
+        <div class="small">Manual entry and selected-number entry use the same Amount field. Choose numbers below, then click ADD SELECTED.</div>
+        <div id="quickEntryMessage" class="quick-entry-message">Enter a number and amount, or select multiple numbers below.</div>
+      </div>
+      <div class="panel voice-entry-panel" style="margin-top:12px">
+        <div class="summary-title">Voice Entry — Speak Numbers & Amounts</div>
+        <div class="controls">
+          <button type="button" class="tab" id="voiceStartBtn" onclick="startVoiceEntry()">🎙 START SPEAKING</button>
+          <div id="voiceLive" class="voice-live" aria-live="polite"><span class="dot"></span><span id="voiceLiveText">MICROPHONE OFF</span></div>
+          <span id="voiceStatus" class="small" aria-live="polite">Speak numbers and amounts. Review will appear automatically after listening stops.</span>
+        </div>
+        <label style="display:block;margin-top:8px">Recognized text (you can edit):
+          <textarea id="voiceTranscript" rows="2" style="width:100%;box-sizing:border-box" placeholder="Example: 02 500, 15 200, 78 100 OR 02, 05, 10, 15 each 100"></textarea>
+        </label>
+        <div id="voiceReview" style="margin-top:8px"></div>
+      </div>
+      <div class="summary-title" style="margin-top:8px">Quick Entry — Multiple Numbers</div>
+      <div id="quickNumberScroll" class="quick-number-scroll">
+        <div id="quickNumberOptions" class="quick-number-grid"></div>
+      </div>
+      <div id="quickSummary"></div>
+    </div>
+  </section>
+  <section id="overlimit" class="hidden">
+    <div class="panel">
+      <div class="summary-title">Over Limit — Number-wise excess sell</div>
+      <div class="note">Only numbers whose total sell is greater than the global limit are shown. Over Limit Amount = Number Total − Global Limit.</div>
+      <div id="overLimitSummary"></div>
+      <div id="overLimitTableWrap"></div>
+    </div>
+  </section>
+  <section id="risk" class="hidden">
+    <div class="panel">
+      <div class="summary-title">Payout Risk — Potential Payout (0–99)</div>
+      <div class="note">Only one number wins. Each row is a separate possible result; payouts are not added together. Payout rate is configurable above. Buy stake is rounded up to whole rupees.</div>
+      <div id="riskSummary"></div>
+      <div id="riskTableWrap"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+function showPage(page){
+  ['cross','quick','overlimit','risk'].forEach(id=>document.getElementById(id).classList.toggle('hidden',page!==id));
+  document.getElementById('crossTabBtn').classList.toggle('active',page==='cross');
+  document.getElementById('quickTabBtn').classList.toggle('active',page==='quick');
+  document.getElementById('overLimitTabBtn').classList.toggle('active',page==='overlimit');
+  document.getElementById('riskTabBtn').classList.toggle('active',page==='risk');
+  if(page==='overlimit') renderOverLimit();
+  if(page==='risk') renderRisk();
+  if(page==='quick') renderQuickSummary();
+}
+
+let denoms=[5,15,25,50,100,500,1000];
+let adjustments={};
+const blocks=[
+  {start:0,end:29},
+  {start:30,end:59},
+  {start:60,end:89},
+  {start:90,end:99}
+];
+
+let counts={};
+let payoutPerRupee=80;
+let yellowThreshold=300;
+let redThreshold=500;
+let commissionRate=20;
+let globalOverLimit=1500;
+let purchasedExcess={};
+let lastAction=null;
+
+try {
+  const saved=localStorage.getItem('crossbook_counts');
+  counts=saved ? JSON.parse(saved) : {};
+  if(!counts || typeof counts !== 'object') counts={};
+  payoutPerRupee=Number(localStorage.getItem('crossbook_payout_rate')) || 80;
+  commissionRate=Number(localStorage.getItem('crossbook_commission_rate') ?? 20);
+  globalOverLimit=Number(localStorage.getItem('crossbook_over_limit') ?? 1500);
+  if(!Number.isFinite(commissionRate)||commissionRate<0||commissionRate>100) commissionRate=20;
+  yellowThreshold=Number(localStorage.getItem('crossbook_yellow_threshold')) || 300;
+  redThreshold=Number(localStorage.getItem('crossbook_red_threshold')) || 500;
+  const savedDenoms=localStorage.getItem('crossbook_denoms');
+  if(savedDenoms){const parsed=JSON.parse(savedDenoms);if(Array.isArray(parsed)&&parsed.length)denoms=parsed.map(Number).filter(v=>Number.isFinite(v)&&v>0);}
+  const savedAdjustments=localStorage.getItem('crossbook_adjustments');
+  adjustments=savedAdjustments?JSON.parse(savedAdjustments):{};
+  const savedPurchased=localStorage.getItem('crossbook_purchased_excess');
+  purchasedExcess=savedPurchased?JSON.parse(savedPurchased):{};
+  if(!purchasedExcess||typeof purchasedExcess!=='object')purchasedExcess={};
+  if(!adjustments||typeof adjustments!=='object')adjustments={};
+} catch(e) {
+  counts={};
+  payoutPerRupee=80;
+  yellowThreshold=300;
+  redThreshold=500;
+  commissionRate=20;
+  globalOverLimit=1500;
+  denoms=[5,15,25,50,100,500,1000];
+  adjustments={};
+  purchasedExcess={};
+}
+
+document.getElementById('denomInput').value=denoms.join(',');
+document.getElementById('yellowThreshold').value=yellowThreshold;
+document.getElementById('redThreshold').value=redThreshold;
+document.getElementById('denomInput').value=denoms.join(',');
+document.getElementById('com').value=commissionRate;
+document.getElementById('overLimitValue').value=globalOverLimit;
+const payoutSelect=document.getElementById('payoutRate');
+if([80,70,60].includes(payoutPerRupee)){payoutSelect.value=String(payoutPerRupee);}else{payoutSelect.value='custom';document.getElementById('customRate').value=payoutPerRupee;}
+document.getElementById('customRateWrap').classList.toggle('hidden',payoutSelect.value!=='custom');
+for(let i=0;i<=9;i++){document.getElementById('houseSelect').add(new Option(`${i} (${String(i*10).padStart(2,'0')}–${String(i*10+9).padStart(2,'0')})`,String(i)));document.getElementById('endingSelect').add(new Option(String(i),String(i)));const pair=String(i).repeat(2);document.getElementById('pairSelect').add(new Option(pair,String(i*11)));}
+document.getElementById('pairSelect').add(new Option('ALL PAIRS','all'));
+document.getElementById('com').addEventListener('input',()=>{
+  const value=Number(document.getElementById('com').value);
+  if(Number.isFinite(value)&&value>=0&&value<=100){commissionRate=value;save();renderCross();renderRisk();}
+});
+
+function key(n,d){return n+'_'+d}
+
+function countedTotal(n){
+  return denoms.reduce((s,d)=>s+(Number(counts[key(n,d)])||0)*d,0);
+}
+function total(n){
+  return countedTotal(n)+(Number(adjustments[n])||0);
+}
+function applyDenoms(){
+  const raw=document.getElementById('denomInput').value;
+  const parsed=[...new Set(raw.split(',').map(v=>Number(v.trim())).filter(v=>Number.isFinite(v)&&v>0))].sort((a,b)=>a-b);
+  if(!parsed.length){alert('Enter at least one valid denomination, e.g. 15,30');return;}
+  denoms=parsed;
+  try{localStorage.setItem('crossbook_denoms',JSON.stringify(denoms));}catch(e){}
+  save();renderCross();renderRisk();
+} 
+function adjustTotal(n,sign){
+  const input=document.getElementById('adjust_'+n);
+  const amount=Math.abs(Number(input?.value)||0);
+  if(!amount){alert('Enter adjustment amount first.');return;}
+  adjustments[n]=(Number(adjustments[n])||0)+(sign*amount);
+  if(adjustments[n]===0)delete adjustments[n];
+  lastAction=null;
+  save();renderCross();renderRisk();
+}
+
+function totals(){
+  return Array.from({length:100},(_,n)=>total(n));
+}
+
+function grandTotal(){
+  return totals().reduce((s,v)=>s+v,0);
+}
+
+function activeRowCount(){
+  return totals().filter(v=>v>0).length;
+}
+
+function average(){
+  const count=activeRowCount();
+  return (grandTotal()*(1-commissionRate/100))/100;
+}
+
+function cls(v){
+  if(v>=redThreshold)return 'red';
+  if(v>=yellowThreshold)return 'yellow';
+  return 'green';
+}
+
+function applyOverLimit(showMessage=true){
+  const input=document.getElementById('overLimitValue');
+  if(input.value.trim()==='') return;
+  const value=Number(input.value);
+  if(!Number.isFinite(value)||value<0){if(showMessage) alert('Enter a valid Over Limit of ₹0 or more.');return;}
+  globalOverLimit=value;save();renderOverLimit();
+  if(showMessage) alert(`Global Over Limit set to ₹${fmt(globalOverLimit)} for all numbers 00–99.`);
+}
+
+// Update the Over Limit tab immediately when the global limit is edited.
+document.getElementById('overLimitValue').addEventListener('input',()=>applyOverLimit(false));
+document.getElementById('overLimitValue').addEventListener('change',()=>applyOverLimit(false));
+
+function renderOverLimit(){
+  const totalValue=grandTotal();
+  const rows=[];
+  for(let n=0;n<=99;n++){
+    const sell=total(n);
+    const excess=Math.max(0,sell-globalOverLimit);
+    const covered=Math.max(0,Number(purchasedExcess[n])||0);
+    const newExcess=Math.max(0,excess-covered);
+    if(sell>globalOverLimit) rows.push({n,sell,excess,covered,newExcess});
+  }
+  document.getElementById('overLimitSummary').innerHTML=`<div class="summary"><div class="card"><b>Global Limit per Number</b><span>₹${fmt(globalOverLimit)}</span></div><div class="card"><b>Numbers Over Limit</b><span>${rows.length}</span></div><div class="card"><b>Total Sell (00–99)</b><span>₹${fmt(totalValue)}</span></div><div class="card"><b>New Excess to Cover</b><span>₹${fmt(rows.reduce((sum,r)=>sum+r.newExcess,0))}</span></div></div>`;
+  const wrap=document.getElementById('overLimitTableWrap');
+  if(!rows.length){wrap.innerHTML='<div class="note">No number is over the current limit.</div>';return;}
+  let html='<div class="tableWrap"><table><tr><th>Number</th><th>Total Sell (₹)</th><th>Total Excess (₹)</th><th>Already Purchased / Covered (₹)</th><th>New Excess (₹)</th><th>Action</th></tr>';
+  rows.forEach(r=>{
+    const fullyCovered=r.newExcess<=0;
+    html+=`<tr><td class="no ${cls(r.sell)}">${String(r.n).padStart(2,'0')}</td><td class="total">₹${fmt(r.sell)}</td><td class="total red">₹${fmt(r.excess)}</td><td class="total">₹${fmt(Math.min(r.covered,r.excess))}</td><td class="total ${fullyCovered?'green':'red'}">₹${fmt(r.newExcess)}</td><td>${fullyCovered?'<button class="overlimit-action covered" disabled>✓ COVERED</button>':`<button class="overlimit-action" onclick="markExcessPurchased(${r.n})">MARK PURCHASED</button>`}</td></tr>`;
+  });
+  wrap.innerHTML=html+'</table></div>';
+}
+
+function markExcessPurchased(n){
+  const excess=Math.max(0,total(n)-globalOverLimit);
+  if(excess<=0){renderOverLimit();return;}
+  purchasedExcess[n]=Math.max(Number(purchasedExcess[n])||0,excess);
+  save();
+  renderOverLimit();
+}
+
+function renderQuickSummary(){
+  initQuickNumberOptions();
+  document.querySelectorAll('.quick-number-option').forEach(label=>{
+    const n=Number(label.dataset.quickNumber);
+    label.classList.remove('green','yellow','red');
+    label.classList.add(cls(total(n)));
+  });
+  const el=document.getElementById('quickSummary');
+  if(el) el.innerHTML=summaryHTML();
+}
+
+function initQuickNumberOptions(){
+  const host=document.getElementById('quickNumberOptions');
+  if(!host || host.dataset.ready==='1') return;
+  host.innerHTML=Array.from({length:100},(_,n)=>
+    `<label class="quick-number-option ${cls(total(n))}" data-quick-number="${n}" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:34px;padding:3px 5px;border:1px solid #c7d0da;border-radius:4px;font-size:13px"><input type="checkbox" class="quickMultiNumber" value="${n}" onchange="updateQuickSelectedCount()" style="width:16px;height:16px;margin:0;flex-shrink:0"><span style="font-weight:600">${String(n).padStart(2,'0')}</span></label>`
+  ).join('');
+  host.dataset.ready='1';
+  updateQuickSelectedCount();
+}
+function selectQuickGroup(start,end,checked){
+  initQuickNumberOptions();
+  document.querySelectorAll('.quickMultiNumber').forEach(el=>{const n=Number(el.value);if(n>=start&&n<=end)el.checked=checked;});
+  updateQuickSelectedCount();
+}
+function selectedQuickNumbers(){
+  return Array.from(document.querySelectorAll('.quickMultiNumber:checked')).map(el=>Number(el.value));
+}
+function updateQuickSelectedCount(){
+  const count=document.getElementById('quickSelectedCount');
+  if(count) count.textContent=selectedQuickNumbers().length;
+}
+function selectAllQuickNumbers(checked){
+  initQuickNumberOptions();
+  document.querySelectorAll('.quickMultiNumber').forEach(el=>el.checked=checked);
+  updateQuickSelectedCount();
+}
+function clearQuickSelection(){
+  document.querySelectorAll('.quickMultiNumber').forEach(el=>el.checked=false);
+  updateQuickSelectedCount();
+  const message=document.getElementById('quickEntryMessage');
+  if(message) message.textContent='Selection cleared. No amounts were changed.';
+}
+function applyQuickMultiEntry(){
+  initQuickNumberOptions();
+  const nums=selectedQuickNumbers();
+  const amountRaw=document.getElementById('quickAmount').value;
+  const amount=Number(amountRaw);
+  if(!nums.length){alert('Select at least one number from the multiple-number dropdown.');return;}
+  if(amountRaw.trim()===''||!Number.isFinite(amount)||amount<=0){alert('Enter an amount greater than ₹0 in the Amount field.');return;}
+  const before=nums.map(n=>({n,previous:Number(adjustments[n])||0}));
+  nums.forEach(n=>{adjustments[n]=Math.round(((Number(adjustments[n])||0)+amount)*100)/100;});
+  lastAction={type:'quickMulti',items:before};
+  save();renderCross();renderOverLimit();renderRisk();renderQuickSummary();
+  document.getElementById('quickEntryMessage').innerHTML=`Added <b>₹${fmt(amount)}</b> to <b>${nums.length}</b> selected number(s): <b>${nums.map(n=>String(n).padStart(2,'0')).join(', ')}</b>. Selection cleared for your next entry.`;
+  document.querySelectorAll('.quickMultiNumber').forEach(el=>el.checked=false);
+  updateQuickSelectedCount();
+  document.getElementById('quickAmount').value='';
+}
+function applyQuickEntry(){
+  const nRaw=document.getElementById('quickNumber').value;
+  const amountRaw=document.getElementById('quickAmount').value;
+  const n=Number(nRaw), amount=Number(amountRaw);
+  if(nRaw.trim()===''||!Number.isInteger(n)||n<0||n>99){alert('Enter a whole number from 00 to 99.');return;}
+  if(amountRaw.trim()===''||!Number.isFinite(amount)||amount<=0){alert('Enter an amount greater than ₹0.');return;}
+  const previous=Number(adjustments[n])||0;
+  adjustments[n]=Math.round((previous+amount)*100)/100;
+  if(adjustments[n]===0) delete adjustments[n];
+  lastAction={type:'quick',n,amount};
+  save();renderCross();renderOverLimit();renderRisk();renderQuickSummary();
+  document.getElementById('quickEntryMessage').innerHTML=`Added <b>₹${fmt(amount)}</b> to number <b>${String(n).padStart(2,'0')}</b>. Previous total: ₹${fmt(total(n)-amount)} · New total: <b>₹${fmt(total(n))}</b>.`;
+  document.getElementById('quickAmount').value='';
+  document.getElementById('quickNumber').value='';
+}
+
+let voiceReviewRows=[];
+let activeSpeechRecognition=null;
+let voiceSilenceTimer=null;
+function clearVoiceSilenceTimer(){if(voiceSilenceTimer){clearTimeout(voiceSilenceTimer);voiceSilenceTimer=null;}}
+function voiceBeep(){
+  try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;const ctx=new Ctx();const osc=ctx.createOscillator();const gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=0.07;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.12);osc.onended=()=>ctx.close();}catch(e){}
+}
+function setVoiceListening(on){
+  const pill=document.getElementById('voiceLive'),txt=document.getElementById('voiceLiveText'),btn=document.getElementById('voiceStartBtn');
+  pill.classList.toggle('listening',!!on);txt.textContent=on?'LISTENING… SPEAK NOW':'MICROPHONE OFF';
+  btn.classList.toggle('is-listening',!!on);btn.textContent=on?'🎙 LISTENING…':'🎙 START SPEAKING';
+}
+function startVoiceEntry(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const status=document.getElementById('voiceStatus');
+  if(!SpeechRecognition){status.textContent='Voice recognition is not supported in this browser. Try latest Chrome or Edge.';return;}
+  if(activeSpeechRecognition){status.textContent='Microphone is already listening. Speak your entries.';return;}
+  const recognition=new SpeechRecognition();activeSpeechRecognition=recognition;clearVoiceSilenceTimer();
+  recognition.lang='en-IN';recognition.interimResults=true;recognition.continuous=true;recognition.maxAlternatives=1;
+  document.getElementById('voiceTranscript').value='';
+  setVoiceListening(true);voiceBeep();
+  status.textContent='Microphone is active. Speak your entry; recording will stop automatically after a short pause.';
+  recognition.onresult=(event)=>{
+    let finalText='',interimText='';
+    for(let i=event.resultIndex;i<event.results.length;i++){const t=event.results[i][0].transcript;if(event.results[i].isFinal)finalText+=t+' ';else interimText+=t;}
+    const box=document.getElementById('voiceTranscript');if(finalText)box.value=(box.value?box.value+' ':'')+finalText.trim();
+    status.textContent=interimText?'Hearing: '+interimText:'Captured: '+box.value;
+    // Stop after a pause in speech, regardless of command type (single number,
+    // multiple numbers, House, Ending, or All Pairs). A new result resets the timer.
+    clearVoiceSilenceTimer();
+    if(activeSpeechRecognition===recognition){
+      voiceSilenceTimer=setTimeout(()=>{
+        if(activeSpeechRecognition===recognition){
+          status.textContent='Speech pause detected. Recording stopped; preparing review automatically.';
+          try{recognition.stop();}catch(e){}
+        }
+      },2000);
+    }
+  };
+  recognition.onerror=(event)=>{clearVoiceSilenceTimer();status.textContent='Voice error: '+event.error+'. You can type or edit the recognized text.';};
+  recognition.onend=()=>{
+    clearVoiceSilenceTimer();
+    if(activeSpeechRecognition===recognition)activeSpeechRecognition=null;
+    setVoiceListening(false);
+    if(!status.textContent.startsWith('Voice error:')){status.textContent='Listening finished. Review entries are ready below.'; if(document.getElementById('voiceTranscript').value.trim()) prepareVoiceReview();}
+  };
+  try{recognition.start();}catch(e){status.textContent='Could not start microphone. Check browser microphone permission.';activeSpeechRecognition=null;setVoiceListening(false);}
+}
+function voiceNumbersFromText(text){
+  const out=[];
+  // Speech recognition may concatenate a spoken list: 01 02 00 10 74 99 -> 010200107499.
+  const tokens=text.match(/\d+/g)||[];
+  tokens.forEach(token=>{
+    if(token.length>=4 && token.length%2===0){for(let i=0;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));}
+    else if(token.length<=2)out.push(Number(token));
+    else { // Odd-length run: retain the final two-digit numbers and avoid inventing a 3-digit number.
+      let i=0;if(token.length%2===1){out.push(Number(token.slice(0,1)));i=1;}for(;i<token.length;i+=2)out.push(Number(token.slice(i,i+2)));
+    }
+  });
+  return out.filter(n=>Number.isInteger(n)&&n>=0&&n<=99);
+}
+function prepareVoiceReview(){
+  const raw=document.getElementById('voiceTranscript').value.trim();const host=document.getElementById('voiceReview');
+  if(!raw){host.innerHTML='<div class="note">Speak or type an entry first.</div>';return;}
+  const rows=[];
+  const clean=raw.replace(/\b(?:rupees?|rs\.?)\b/gi,' ').replace(/₹/g,' ').replace(/,/g,' ').replace(/\s+/g,' ').trim();
+  const amountMatch=clean.match(/(?:₹\s*)?(\d+(?:\.\d{1,2})?)\s*each\b/i);
+  const amount=amountMatch?Number(amountMatch[1]):NaN;
+  const isAllPair=/\ball\s+(?:pairs?|piers?)\b/i.test(clean);
+  const houseMatch=clean.match(/\bhouse\s+(\d)\b/i);
+  const endingMatch=clean.match(/\bending\s+(\d)\b/i);
+  if(amountMatch && isAllPair){
+    for(let d=0;d<=9;d++) rows.push({n:d*11,amount});
+  }else if(amountMatch && houseMatch){
+    const h=Number(houseMatch[1]);for(let d=0;d<=9;d++)rows.push({n:h*10+d,amount});
+  }else if(amountMatch && endingMatch){
+    const e=Number(endingMatch[1]);for(let d=0;d<=9;d++)rows.push({n:d*10+e,amount});
+  }else if(amountMatch){
+    // For a spoken list, accept separated two-digit tokens. If speech recognition joins them,
+    // split an even-length digit run into pairs (e.g. 01020510 -> 01,02,05,10).
+    const before=clean.slice(0,amountMatch.index).replace(/\ball\s+(?:pairs?|piers?)\b/ig,' ').replace(/\b(?:house|ending)\s+\d\b/ig,' ');
+    const tokens=before.match(/\d+/g)||[];
+    tokens.forEach(token=>{
+      if(token.length===1) rows.push({n:Number(token),amount});
+      else if(token.length%2===0){for(let i=0;i<token.length;i+=2)rows.push({n:Number(token.slice(i,i+2)),amount});}
+      else {rows.push({n:Number(token.slice(0,1)),amount});for(let i=1;i<token.length;i+=2)rows.push({n:Number(token.slice(i,i+2)),amount});}
+    });
+  }else{
+    // Individual pairs such as “01 Rs 50, 53 Rs 60, 98 Rs 500”.
+    // First preserve currency markers from the raw transcript, as stripping them can merge tokens.
+    const currencyPairs=[...raw.matchAll(/(?:number\s*)?(\d{1,2})\s*(?:₹|rs\.?|rupees?)\s*(\d+(?:\.\d{1,2})?)/gi)];
+    if(currencyPairs.length){currencyPairs.forEach(m=>{const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});});}
+    else {
+      // Fallback for simple typed/speech transcripts like “01 500, 02 200”.
+      const matches=[...clean.matchAll(/(?:number\s*)?(\d{1,2})\s*(?:[:=]|\s+)\s*(\d+(?:\.\d{1,2}?))/gi)];
+      matches.forEach(m=>{const n=Number(m[1]),a=Number(m[2]);if(n<=99&&a>0)rows.push({n,amount:a});});
+    }
+  }
+  voiceReviewRows=rows.filter(r=>Number.isInteger(r.n)&&r.n>=0&&r.n<=99&&Number.isFinite(r.amount)&&r.amount>0);
+  if(!voiceReviewRows.length){host.innerHTML='<div class="note">Could not confidently read the command. Try “all pairs 100 each”, “house 2 100 each”, “ending 7 100 each”, or “01, 02, 05 each 100”.</div>';return;}
+  renderVoiceReview();
+}
+function renderVoiceReview(){
+  const host=document.getElementById('voiceReview');
+  let html='<div class="summary-title">Review entries before adding</div><div class="tableWrap"><table><tr><th>Number</th><th>Amount (₹)</th><th></th></tr>';
+  voiceReviewRows.forEach((r,i)=>{html+=`<tr><td><input type="number" min="0" max="99" step="1" value="${r.n}" onchange="editVoiceRow(${i},'n',this.value)" style="width:76px"></td><td><input type="number" min="0.01" step="0.01" value="${r.amount}" onchange="editVoiceRow(${i},'amount',this.value)" style="width:110px"></td><td><button type="button" class="undo" onclick="removeVoiceRow(${i})">REMOVE</button></td></tr>`;});
+  const sum=voiceReviewRows.reduce((a,r)=>a+r.amount,0);
+  html+=`</table></div><div class="small">${voiceReviewRows.length} entries · Total added: ₹${fmt(sum)}. Each row adds its full amount to that number.</div><button type="button" class="quick-add-selected" onclick="addVoiceReviewToCrossBook()">CONFIRM & ADD TO CROSS BOOK</button>`;
+  host.innerHTML=html;
+}
+function editVoiceRow(i,field,value){const v=Number(value);if(!Number.isFinite(v))return;if(field==='n'&&(!Number.isInteger(v)||v<0||v>99)){alert('Number must be 00–99.');renderVoiceReview();return;}if(field==='amount'&&v<=0){alert('Amount must be greater than zero.');renderVoiceReview();return;}voiceReviewRows[i][field]=v;}
+function removeVoiceRow(i){voiceReviewRows.splice(i,1);renderVoiceReview();}
+function addVoiceReviewToCrossBook(){
+  if(!voiceReviewRows.length){alert('No valid voice entries to add.');return;}
+  const before=voiceReviewRows.map(r=>({n:r.n,previous:Number(adjustments[r.n])||0}));
+  voiceReviewRows.forEach(r=>{adjustments[r.n]=Math.round(((Number(adjustments[r.n])||0)+r.amount)*100)/100;});
+  lastAction={type:'quickMulti',items:before};save();renderCross();renderOverLimit();renderRisk();renderQuickSummary();
+  document.getElementById('quickEntryMessage').textContent=`Voice entry added: ${voiceReviewRows.length} row(s).`;
+  document.getElementById('voiceStatus').textContent='Entries added successfully. You can start a new voice entry.';
+  document.getElementById('voiceTranscript').value='';document.getElementById('voiceReview').innerHTML='';voiceReviewRows=[];
+}
+
+function applyThresholds(){
+  const y=Number(document.getElementById('yellowThreshold').value);
+  const r=Number(document.getElementById('redThreshold').value);
+  if(!Number.isFinite(y)||y<0||!Number.isFinite(r)||r<=y){
+    alert('Red threshold must be greater than Yellow threshold.');
+    document.getElementById('redThreshold').value=Math.max(y+1,500);
+    return;
+  }
+  yellowThreshold=y;redThreshold=r;save();renderCross();renderRisk();
+}
+
+function fmt(v){
+  return Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
+}
+
+function save(){
+  try {
+    localStorage.setItem('crossbook_counts',JSON.stringify(counts));
+    localStorage.setItem('crossbook_payout_rate',String(payoutPerRupee));
+    localStorage.setItem('crossbook_commission_rate',String(commissionRate));
+    localStorage.setItem('crossbook_over_limit',String(globalOverLimit));
+    localStorage.setItem('crossbook_yellow_threshold',String(yellowThreshold));
+    localStorage.setItem('crossbook_red_threshold',String(redThreshold));
+    localStorage.setItem('crossbook_denoms',JSON.stringify(denoms));
+    localStorage.setItem('crossbook_adjustments',JSON.stringify(adjustments));
+    localStorage.setItem('crossbook_purchased_excess',JSON.stringify(purchasedExcess));
+  } catch(e) {}
+}
+
+function summaryHTML(){
+  const totalValue=grandTotal();
+  const commission=totalValue*commissionRate/100;
+  const afterCM=totalValue-commission;
+  return `
+    <div class="summary">
+      <div class="card"><b>Total</b><span>${fmt(totalValue)}</span></div>
+      <div class="card"><b>COM (${fmt(commissionRate)}%)</b><span>${fmt(commission)}</span></div>
+      <div class="card"><b>After Commission</b><span>₹${fmt(afterCM)}</span></div>
+      <div class="card"><b>Available Stake Limit</b><span>₹${fmt(Math.floor(afterCM/payoutPerRupee))}</span></div>
+    </div>`;
+}
+
+let crossBookCurrentPage=0;
+function setCrossBookPage(pageIndex){
+  const root=document.getElementById('crossTables');
+  const pages=[...root.querySelectorAll('.cross-ledger-page')];
+  if(!pages.length)return;
+  crossBookCurrentPage=Math.max(0,Math.min(1,pageIndex));
+  pages.forEach((el,i)=>el.classList.toggle('is-hidden',i!==crossBookCurrentPage));
+  const indicator=document.getElementById('crossPageIndicator');
+  const prev=document.getElementById('crossPrevPage');
+  const next=document.getElementById('crossNextPage');
+  if(indicator)indicator.textContent=`Page ${crossBookCurrentPage+1} of 2`;
+  if(prev)prev.disabled=crossBookCurrentPage===0;
+  if(next)next.disabled=crossBookCurrentPage===1;
+}
+function renderCross(){
+  const root=document.getElementById('crossTables');
+  root.innerHTML='';
+  const nav=document.createElement('div');nav.className='cross-page-nav';
+  nav.innerHTML='<button type="button" id="crossPrevPage" aria-label="Previous Cross Book page" onclick="setCrossBookPage(0)">← Previous</button><span id="crossPageIndicator" class="cross-page-indicator">Page 1 of 2</span><button type="button" id="crossNextPage" aria-label="Next Cross Book page" onclick="setCrossBookPage(1)">Next →</button>';
+  root.appendChild(nav);
+
+  // Match the paper ledger: two compact 25-number columns on each page.
+  const pages=[
+    {title:'Cross Book — Page 1', columns:[Array.from({length:25},(_,i)=>i+1),Array.from({length:25},(_,i)=>i+26)]},
+    {title:'Cross Book — Page 2', columns:[Array.from({length:25},(_,i)=>i+51),[...Array.from({length:24},(_,i)=>i+76),0]]}
+  ];
+
+  function makeNumberTable(numbers){
+    const p=document.createElement('div');p.className='panel';
+    const wrap=document.createElement('div');wrap.className='tableWrap';
+    const t=document.createElement('table');
+    let html='<tr><th>No.</th>'+denoms.map(d=>`<th>${d}</th>`).join('')+'<th>Total</th></tr>';
+    numbers.forEach(n=>{
+      const v=total(n);
+      const displayNo=String(n).padStart(2,'0');
+      html+=`<tr><td class="no ${cls(v)}">${displayNo}</td>`;
+      denoms.forEach(d=>{
+        const c=Number(counts[key(n,d)])||0;
+        html+=`<td class="denomsCell"><button class="denom ${c>0?'hasCount':''}" data-cell="${n}_${d}" onclick="tap(${n},${d})"><span>${d}</span><span class="countBadge ${c>0?'':'zero'}">${c}</span></button></td>`;
+      });
+      const adj=Number(adjustments[n])||0;
+      html+=`<td class="totalCell"><div class="total">${fmt(v)}</div><div class="adjustBox"><input class="adjustInput" id="adjust_${n}" type="number" min="0" step="1" placeholder="±" aria-label="Adjustment for row ${displayNo}"><button class="adjustBtn" onclick="adjustTotal(${n},-1)">−</button><button class="adjustBtn" onclick="adjustTotal(${n},1)">+</button></div><span class="adjustNote">Adj: ${adj>0?'+':''}${fmt(adj)}</span></td></tr>`;
+    });
+    t.innerHTML=html;wrap.appendChild(t);p.appendChild(wrap);return p;
+  }
+
+  pages.forEach(page=>{
+    const pageEl=document.createElement('div');pageEl.className='cross-ledger-page'+(pages.indexOf(page)!==0?' is-hidden':'');
+    const title=document.createElement('div');title.className='cross-ledger-page-title';title.textContent=page.title;pageEl.appendChild(title);
+    const columns=document.createElement('div');columns.className='cross-ledger-columns';
+    page.columns.forEach(nums=>columns.appendChild(makeNumberTable(nums)));
+    pageEl.appendChild(columns);root.appendChild(pageEl);
+  });
+
+  setCrossBookPage(crossBookCurrentPage);
+  document.getElementById('crossSummary').innerHTML=summaryHTML();
+  renderQuickSummary();
+  renderOverLimit();
+  renderRisk();
+}
+
+
+// Book-like swipe navigation within the Cross Book tab.
+(function enableCrossBookSwipe(){
+  const root=document.getElementById('crossTables');
+  if(!root || root.dataset.swipeReady==='1')return;
+  root.dataset.swipeReady='1';
+  let startX=null,startY=null;
+  root.addEventListener('touchstart',e=>{if(!e.touches||e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;},{passive:true});
+  root.addEventListener('touchend',e=>{if(startX===null||!e.changedTouches||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-startX;const dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.25){setCrossBookPage(dx<0?1:0);}startX=null;startY=null;},{passive:true});
+  document.addEventListener('keydown',e=>{if(document.getElementById('cross')?.classList.contains('hidden'))return;if(e.key==='ArrowLeft')setCrossBookPage(0);if(e.key==='ArrowRight')setCrossBookPage(1);});
+})();
+
+function renderRisk(){
+  const totalValue=grandTotal();
+  const available=totalValue*(1-commissionRate/100);
+  const stakeLimit=payoutPerRupee>0?Math.floor(available/payoutPerRupee):0;
+  const rows=[];
+  for(let n=0;n<=99;n++){
+    const stake=total(n);
+    if(stake<=0) continue;
+    const payout=stake*payoutPerRupee;
+    const shortfall=Math.max(0,payout-available);
+    const buyStake=payoutPerRupee>0?Math.ceil(shortfall/payoutPerRupee):0;
+    rows.push({n,stake,payout,available,shortfall,buyStake});
+  }
+  const summary=document.getElementById('riskSummary');
+  const wrap=document.getElementById('riskTableWrap');
+  summary.innerHTML=`<div class="summary">
+    <div class="card"><b>Total Sell</b><span>₹${fmt(totalValue)}</span></div>
+    <div class="card"><b>Commission (${fmt(commissionRate)}%)</b><span>₹${fmt(totalValue*commissionRate/100)}</span></div>
+    <div class="card"><b>After Commission</b><span>₹${fmt(available)}</span></div>
+    <div class="card"><b>Available Stake Limit (₹1 stake)</b><span>₹${fmt(stakeLimit)}</span></div>
+  </div>`;
+  if(!rows.length){wrap.innerHTML='<div class="note">Enter stakes in CrossBook to see each number’s potential payout and required outside buy.</div>';return;}
+  let html=`<div class="tableWrap"><table><tr><th>Number</th><th>Stake (₹)</th><th>Potential Payout (×${fmt(payoutPerRupee)})</th><th>Available After Commission (₹)</th><th>Potential Shortfall (₹)</th><th>Buy from Other Owner (₹ stake)</th></tr>`;
+  rows.forEach(r=>{
+    html+=`<tr><td class="no ${r.shortfall>0?'red':'green'}">${String(r.n).padStart(2,'0')}</td><td class="total">₹${fmt(r.stake)}</td><td class="total">₹${fmt(r.payout)}</td><td class="total">₹${fmt(r.available)}</td><td class="total ${r.shortfall>0?'red':'green'}">₹${fmt(r.shortfall)}</td><td class="buyStake ${r.buyStake>0?'buyNeeded':'buyNone'}">₹${fmt(r.buyStake)}</td></tr>`;
+  });
+  html+='</table></div>';
+  wrap.innerHTML=html;
+}
+
+function applyBulkToNumbers(numbers, amount, label){
+  const value=Number(amount);
+  if(!Number.isFinite(value)||value<=0){alert('Enter a per-number amount greater than ₹0.');return;}
+  numbers.forEach(n=>{adjustments[n]=Math.round(((Number(adjustments[n])||0)+value)*100)/100;});
+  lastAction=null;save();renderCross();
+  alert(`${label}: ₹${fmt(value)} added to each of ${numbers.length} numbers. Total added: ₹${fmt(value*numbers.length)}.`);
+}
+function applyHouse(){
+  const house=Number(document.getElementById('houseSelect').value);
+  const numbers=Array.from({length:10},(_,i)=>house*10+i);
+  applyBulkToNumbers(numbers,document.getElementById('houseAmount').value,`House ${house}`);
+}
+function applyEnding(){
+  const ending=Number(document.getElementById('endingSelect').value);
+  const numbers=Array.from({length:10},(_,i)=>i*10+ending);
+  applyBulkToNumbers(numbers,document.getElementById('endingAmount').value,`Ending ${ending}`);
+}
+function applyPair(){
+  const selected=document.getElementById('pairSelect').value;
+  const amount=document.getElementById('pairAmount').value;
+  if(selected==='all'){
+    const numbers=Array.from({length:10},(_,i)=>i*11);
+    applyBulkToNumbers(numbers,amount,'All Pairs (00, 11, 22, 33, 44, 55, 66, 77, 88, 99)');
+    return;
+  }
+  const number=Number(selected);
+  applyBulkToNumbers([number],amount,`Pair ${String(number).padStart(2,'0')}`);
+}
+
+function tap(n,d){
+  const k=key(n,d);
+  counts[k]=(Number(counts[k])||0)+1;
+  lastAction={n:n,d:d,key:k};
+  save();
+  renderCross();
+  renderOverLimit();
+  renderRisk();
+  const btn=document.querySelector(`button[data-cell="${n}_${d}"]`);
+  if(btn){btn.classList.add('clicked','flash');setTimeout(()=>btn.classList.remove('flash'),350);}
+}
+
+function undoLast(){
+  if(!lastAction){alert('Nothing to undo.');return;}
+  if(lastAction.type==='quickMulti'){
+    lastAction.items.forEach(item=>{if(item.previous>0) adjustments[item.n]=item.previous; else delete adjustments[item.n];});
+    lastAction=null;save();renderCross();renderOverLimit();renderRisk();renderQuickSummary();
+    document.getElementById('quickEntryMessage').textContent='Last multiple-number entry undone.';
+    return;
+  }
+  if(lastAction.type==='quick'){
+    const n=lastAction.n;
+    const current=Number(adjustments[n])||0;
+    const next=Math.max(0,Math.round((current-lastAction.amount)*100)/100);
+    if(next>0) adjustments[n]=next; else delete adjustments[n];
+    lastAction=null;save();renderCross();renderOverLimit();renderRisk();renderQuickSummary();
+    document.getElementById('quickEntryMessage').textContent='Last quick entry undone.';
+    return;
+  }
+  const k=lastAction.key;
+  const current=Number(counts[k])||0;
+  if(current>0){counts[k]=current-1;if(counts[k]===0)delete counts[k];}
+  const undone={...lastAction};
+  lastAction=null;
+  save();renderCross();renderRisk();
+  const btn=document.querySelector(`button[data-cell="${undone.n}_${undone.d}"]`);
+  if(btn){btn.classList.add('clicked','flash');setTimeout(()=>btn.classList.remove('flash'),350);}
+}
+
+function setCom(v){
+  const value=Number(v);
+  if(!Number.isFinite(value)||value<0||value>100){alert('Commission must be between 0 and 100%.');return;}
+  commissionRate=value;
+  document.getElementById('com').value=commissionRate;
+  save();renderCross();renderRisk();
+}
+
+function resetDay(){
+  if(!confirm('Save the current day as PDF before clearing?')) return;
+
+  savePDF();
+
+  setTimeout(()=>{
+    if(confirm("After saving the PDF, press OK to clear today's entries.")){
+      counts={};
+      adjustments={};
+      purchasedExcess={};
+      lastAction=null;
+      save();
+      document.getElementById('com').value=commissionRate;
+      try{localStorage.setItem('crossbook_adjustments','{}');localStorage.setItem('crossbook_purchased_excess','{}');}catch(e){}
+      renderCross();
+      renderRisk();
+      showPage('cross');
+    }
+  },800);
+}
+
+function savePDF(){
+  window.print();
+}
+
+
+document.getElementById('payoutRate').addEventListener('change',()=>{
+  const selected=document.getElementById('payoutRate').value;
+  document.getElementById('customRateWrap').classList.toggle('hidden',selected!=='custom');
+  if(selected!=='custom'){
+    payoutPerRupee=Number(selected);save();renderCross();
+  } else {
+    const custom=Number(document.getElementById('customRate').value);
+    if(Number.isFinite(custom)&&custom>0){payoutPerRupee=custom;save();renderCross();}
+  }
+});
+document.getElementById('customRate').addEventListener('input',()=>{
+  const custom=Number(document.getElementById('customRate').value);
+  if(Number.isFinite(custom)&&custom>0){payoutPerRupee=custom;save();renderCross();}
+});
+
+function applyThresholdsLive(){
+  const yInput=document.getElementById('yellowThreshold');
+  const rInput=document.getElementById('redThreshold');
+  const y=Number(yInput.value);
+  const r=Number(rInput.value);
+  if(yInput.value.trim()==='' || rInput.value.trim()==='') return;
+  if(!Number.isFinite(y) || y<0 || !Number.isFinite(r) || r<=y) return;
+  yellowThreshold=y;
+  redThreshold=r;
+  save();
+  renderCross();
+  renderRisk();
+}
+document.getElementById('yellowThreshold').addEventListener('input', applyThresholdsLive);
+document.getElementById('redThreshold').addEventListener('input', applyThresholdsLive);
+
+try {
+  initQuickNumberOptions();
+  renderCross();
+  renderRisk();
+} catch(e) {
+  document.getElementById('crossTables').innerHTML =
+    '<div class="panel"><div class="note">Table loading error. Please close this file and open it again.</div></div>';
+}
+</script>
+</body>
+</html>
